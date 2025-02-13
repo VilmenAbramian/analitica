@@ -41,9 +41,9 @@ def monte_carlo_simulation(num_trials, num_balls, num_urns):
 
 if __name__ == '__main__':
     print('-----Запущен метод Монте-Карло-----')
-    num_trials = 100 # Количество экспериментов
-    num_balls = 50  # Количество шариков (RFID-меток)
-    num_urns = 20  # Количество урн (слотов 2^Q)
+    num_trials = 1000 # Количество экспериментов
+    num_balls = 5  # Количество шариков (RFID-меток)
+    num_urns = 10  # Количество урн (слотов 2^Q)
     results = monte_carlo_simulation(num_trials, num_balls, num_urns)
 
     print("Средние количества урн:")
