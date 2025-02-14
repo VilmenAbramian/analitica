@@ -60,10 +60,10 @@ def count_ways_l(m:int, n:int, k:int, l:int) -> int:
     k - количество пустых урн,
     l - количество урн с 1 шариком
     """
-    return count_ways_k(m, n, k) * count_ways_k(l, n-(m-k), m-k)
+    return count_ways_k(m, n, k) * count_ways_k(m-k, n-(m-k), l)
 
 
-def calculate_range_k(urns_number, balls_numbers):
+def calculate_range_k_l(urns_number, balls_numbers):
     if urns_number >= balls_numbers:
         empty_urns_min = urns_number - balls_numbers
     else:
@@ -72,25 +72,47 @@ def calculate_range_k(urns_number, balls_numbers):
     return k_range
 
 
-def calculate_k_probs(urns_number, balls_numbers, k_range):
-    total_ways_k = total_distributions(urns_number, balls_numbers)
+def calculate_k_probs(urns_number, balls_numbers):
+    total_ways = total_distributions(urns_number, balls_numbers)
+    k_range = calculate_range_k_l(urns_number, balls_numbers)
     probs_k = []
     for k in k_range:
-        combinations_1 = count_ways_k(urns_number, balls_numbers, k)
-        probs_k.append(combinations_1 / total_ways_k)
+        combinations = count_ways_k(urns_number, balls_numbers, k)
+        probs_k.append(combinations / total_ways)
     return probs_k
+
+
+def calculate_l_probs(urns_number, balls_number):
+    k_range = calculate_range_k_l(urns_number, balls_number)
+    probs_kl = []
+    for i in range(len(k_range)):
+        probs_l = []
+        total_ways = total_distributions(
+            urns_number,
+            balls_number
+        ) * total_distributions(
+            urns_number-k_range[i],
+            balls_number-(urns_number-k_range[i])
+        )
+        l_range = calculate_range_k_l(urns_number-k_range[i], balls_number)
+        for l in l_range:
+            combinations = count_ways_l(urns_number, balls_number, k_range[i], l)
+            probs_l.append(combinations / total_ways)
+        probs_kl.append(probs_l)
+    return probs_kl
+
+
+
 
 if __name__ == "__main__":
     print('-----Запущен метод аналитики-----')
     # urns_numbers = list(range(1, 10))  # Количество урн
     urns_numbers = (10,)
-    # balls_numbers = list(range(0, 10)) # Количество шариков
+    # balls_number = list(range(0, 10)) # Количество шариков
     balls_numbers = 5
     for urns_number in urns_numbers:
         print('--------------------------------------------------------')
         print(f'Результаты для {urns_number} урн и {balls_numbers} шариков')
-
-        k_range = calculate_range_k(urns_number, balls_numbers)
-        probs_k = calculate_k_probs(urns_number, balls_numbers, k_range)
-        print(f'Вероятности для k в диапазоне {k_range}: {probs_k}')
+        probs_k = calculate_k_probs(urns_number, balls_numbers)
+        print(f'Вероятности для разных k: {probs_k}')
         print(f'Математическое ожидание вероятностей: {np.mean(probs_k)}')
