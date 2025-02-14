@@ -1,34 +1,27 @@
-import random
+import numpy as np
 
 
 def monte_carlo_simulation(num_trials, num_balls, num_urns):
-    empty_counts = []
-    one_ball_counts = []
-    multiple_ball_counts = []
+    empty_counts = np.zeros(num_trials, dtype=int)
+    one_ball_counts = np.zeros(num_trials, dtype=int)
+    multiple_ball_counts = np.zeros(num_trials, dtype=int)
+    urns = np.zeros(num_urns, dtype=int)
 
-    for _ in range(num_trials):
-        # Список для подсчёта количества шариков в каждой урне
-        urns = [0] * num_urns
+    for i in range(num_trials):
+        urns.fill(0)
 
-        # Распределяем шарики случайным образом по урнам
-        for _ in range(num_balls):
-            urn_choice = random.randint(0, num_urns - 1)
-            urns[urn_choice] += 1
+        urn_choices = np.random.randint(0, num_urns, size = num_balls)
+        unique, counts = np.unique(urn_choices, return_counts=True)
+        urns[unique] += counts
 
-        # Считаем, сколько урн в каждом из состояний
-        empty_count = urns.count(0)  # Количество пустых урн
-        one_ball_count = urns.count(1)  # Количество урн с одним шариком
-        multiple_ball_count = num_urns - empty_count - one_ball_count  # Остальные урны
-
-        # Сохраняем результаты для текущего эксперимента
-        empty_counts.append(empty_count)
-        one_ball_counts.append(one_ball_count)
-        multiple_ball_counts.append(multiple_ball_count)
+        empty_counts[i] = np.count_nonzero(urns == 0)
+        one_ball_counts[i] = np.count_nonzero(urns == 1)
+        multiple_ball_counts[i] = num_urns - empty_counts[i] - one_ball_counts[i]
 
     # Вычисляем средние значения
-    avg_empty = sum(empty_counts) / num_trials
-    avg_one_ball = sum(one_ball_counts) / num_trials
-    avg_multiple_ball = sum(multiple_ball_counts) / num_trials
+    avg_empty = np.mean(empty_counts)
+    avg_one_ball = np.mean(one_ball_counts)
+    avg_multiple_ball = np.mean(multiple_ball_counts)
 
     # Вероятности для случайно выбранной урны
     total_urn_counts = num_trials * num_urns  # Общее число наблюдений урн
