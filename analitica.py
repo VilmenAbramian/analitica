@@ -1,6 +1,7 @@
+import matplotlib.pyplot as plt
 from math import factorial
-
 import numpy as np
+import seaborn as sns
 
 
 def combinations(n, k):
@@ -22,7 +23,7 @@ def total_distributions(m, n):
     return m**n
 
 
-def count_ways_k(m:int, n:int, k:int) -> int:
+def count_ways_k(m: int, n: int, k: int) -> int:
     """
     Расчёт количества способов распределить шарики по урнам
     таким образом, чтобы:
@@ -38,29 +39,32 @@ def count_ways_k(m:int, n:int, k:int) -> int:
 
     # Выбор k пустых урн
     empty_urns_combinations = combinations(m, k)
-    if m - k >= n:
-        bolls_combinations = combinations(m-k, n)
-    else:
-        bolls_combinations = combinations(n, m-k)
-    # Общее количество способов
-    result_combinations = empty_urns_combinations * bolls_combinations
-    return result_combinations
+    ways_to_fill = m - k
+    ball_distributions = total_distributions(ways_to_fill, n)
+    return empty_urns_combinations * ball_distributions
 
 
-def count_ways_l(m:int, n:int, k:int, l:int) -> int:
+def count_ways_l(m, n, k, l):
     """
-    Расчёт количества способов распределить шарики по урнам
-    таким образом, чтобы:
+    Число способов распределить шары так, чтобы:
     - k урн были пустыми
-    - l урн содержали 1 и только 1 шарик
-    - m-k-l урн содержали 2 и более шариков
-    Параметры:
-    m - всего урн,
-    n - количество шариков,
-    k - количество пустых урн,
-    l - количество урн с 1 шариком
+    - l урн содержали ровно 1 шар
+    - m - k - l урн содержали 2+ шара
     """
-    return count_ways_k(m, n, k) * count_ways_k(m-k, n-(m-k), l)
+    if k + l > m or k > m or l > m:
+        return 0  # Невозможные случаи
+
+    ways_to_choose_k = combinations(m, k)  # Выбираем пустые урны
+    ways_to_choose_l = combinations(m - k, l)  # Выбираем урны с 1 шаром
+    remaining_balls = n - l  # Оставшиеся шары (мы уже распределили l шаров)
+
+    # Проверяем, есть ли урны для заполнения
+    if m - k - l > 0:
+        ways_to_fill_remaining = total_distributions(m - k - l, remaining_balls)
+    else:
+        ways_to_fill_remaining = 1 if remaining_balls == 0 else 0  # Если нет урн, но шары остались — ошибка
+
+    return ways_to_choose_k * ways_to_choose_l * ways_to_fill_remaining
 
 
 def calculate_range_k_l(urns_number, balls_numbers):
@@ -72,47 +76,36 @@ def calculate_range_k_l(urns_number, balls_numbers):
     return k_range
 
 
-def calculate_k_probs(urns_number, balls_numbers):
-    total_ways = total_distributions(urns_number, balls_numbers)
-    k_range = calculate_range_k_l(urns_number, balls_numbers)
-    probs_k = []
-    for k in k_range:
-        combinations = count_ways_k(urns_number, balls_numbers, k)
-        probs_k.append(combinations / total_ways)
-    return probs_k
+def analit_probs_k_l(m, n):
+    """
+    Вычисляет матрицу вероятностей P(k, l), аналогичную Монте-Карло методу.
 
+    :param m: Количество урн
+    :param n: Количество шаров
+    :return: Матрица P(k, l), где k - пустые урны, l - урны с 1 шариком
+    """
+    total_ways = total_distributions(m, n)
+    prob_matrix = np.zeros((m + 1, m + 1), dtype=float)
 
-def calculate_l_probs(urns_number, balls_number):
-    k_range = calculate_range_k_l(urns_number, balls_number)
-    probs_kl = []
-    for i in range(len(k_range)):
-        probs_l = []
-        total_ways = total_distributions(
-            urns_number,
-            balls_number
-        ) * total_distributions(
-            urns_number-k_range[i],
-            balls_number-(urns_number-k_range[i])
-        )
-        l_range = calculate_range_k_l(urns_number-k_range[i], balls_number)
-        for l in l_range:
-            combinations = count_ways_l(urns_number, balls_number, k_range[i], l)
-            probs_l.append(combinations / total_ways)
-        probs_kl.append(probs_l)
-    return probs_kl
+    for k in range(m + 1):
+        for l in range(m - k + 1):  # l не может превышать m - k
+            prob_matrix[k, l] = count_ways_l(m, n, k, l) / total_ways
 
-
+    return prob_matrix
 
 
 if __name__ == "__main__":
     print('-----Запущен метод аналитики-----')
-    # urns_numbers = list(range(1, 10))  # Количество урн
-    urns_numbers = (10,)
-    # balls_number = list(range(0, 10)) # Количество шариков
-    balls_numbers = 5
-    for urns_number in urns_numbers:
-        print('--------------------------------------------------------')
-        print(f'Результаты для {urns_number} урн и {balls_numbers} шариков')
-        probs_k = calculate_k_probs(urns_number, balls_numbers)
-        print(f'Вероятности для разных k: {probs_k}')
-        print(f'Математическое ожидание вероятностей: {np.mean(probs_k)}')
+    urns_number = 10
+    balls_number = 5
+    prob_matrix = analit_probs_k_l(urns_number, balls_number)
+
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(prob_matrix, annot=False, fmt=".5f", cmap="Blues")
+    plt.xlabel("Урны с 1 шаром (l)")
+    plt.ylabel("Пустые урны (k)")
+    plt.title("Аналитическая вероятность P(k, l)")
+    plt.show()
+
+    print("Аналитическая матрица вероятностей P(k, l):")
+    print(prob_matrix)
